@@ -37,13 +37,20 @@ npm run dev
 3. 환경변수 비워둔 채 그대로 **Deploy** 클릭
 4. `https://sponge-study-<해시>.vercel.app` 생성됨 (이 시점엔 투표가 메모리 fallback이라 서버리스 인스턴스 간 동기화 안 됨)
 
-### 2) KV 데이터베이스 연결
+### 2) Redis 데이터베이스 연결 (멀티 디바이스 투표)
 
+> Vercel이 2025년 말 "Vercel KV" 단독 브랜드를 없애고 마켓플레이스로 옮겼어. 코드는 `KV_REST_API_URL`/`KV_REST_API_TOKEN`와 `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` 둘 다 인식하니까 어느 옵션을 골라도 동작함.
+
+**옵션 A — Redis (Official Redis for Vercel)** ← 추천
 1. 프로젝트 페이지 → **Storage** 탭 → **Create Database**
-2. **KV** (Vercel KV by Upstash) 선택 → 이름 아무거나 (예: `sponge-votes`) → **Create**
+2. **Redis** 선택 → 이름 `sponge-votes` → **Create**
 3. "Connect to Project" → 환경(Production/Preview/Development 모두) 체크 → **Connect**
-   - `KV_REST_API_URL`, `KV_REST_API_TOKEN` 등이 자동으로 환경변수에 추가됨
-4. **Deployments** 탭 → 최신 배포 우측 ⋯ → **Redeploy** → "Use existing Build Cache" 체크 해제
+
+**옵션 B — Upstash 마켓플레이스**
+1. **Storage** 탭 → **Upstash** → **Redis** 선택 → free tier
+2. 프로젝트에 Connect → `UPSTASH_REDIS_REST_URL`/`UPSTASH_REDIS_REST_TOKEN` 자동 주입
+
+**마지막 단계**: **Deployments** 탭 → 최신 배포 우측 ⋯ → **Redeploy** → "Use existing Build Cache" 체크 해제
 
 이게 끝. 이제 https://sponge-study-<해시>.vercel.app 에서 조원들이 각자 폰으로 투표 가능.
 

@@ -1,4 +1,4 @@
-import { kv } from "@vercel/kv";
+import { Redis } from "@upstash/redis";
 
 export type VoteSnapshot = {
   votes: Record<string, number>;
@@ -6,11 +6,16 @@ export type VoteSnapshot = {
   closed: boolean;
 };
 
-const isKvConfigured = () =>
-  !!process.env.KV_REST_API_URL && !!process.env.KV_REST_API_TOKEN;
+// Auto-detect either KV_* (legacy Vercel KV) or UPSTASH_REDIS_REST_* env vars.
+const url =
+  process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+const token =
+  process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
 
-// In-memory fallback for local dev when KV env vars are missing.
-// Persisted across hot reloads via globalThis.
+const redis = url && token ? new Redis({ url, token }) : null;
+const isConfigured = () => redis !== null;
+
+// In-memory fallback for local dev when env vars are missing.
 type MemStore = Map<number, VoteSnapshot>;
 const g = globalThis as unknown as { __spongeMem?: MemStore };
 if (!g.__spongeMem) g.__spongeMem = new Map<number, VoteSnapshot>();
@@ -23,13 +28,13 @@ const votersKey = (teamId: number) => `sponge:votes:${teamId}:voters`;
 const closedKey = (teamId: number) => `sponge:votes:${teamId}:closed`;
 
 export async function getSnapshot(teamId: number): Promise<VoteSnapshot> {
-  if (!isKvConfigured()) {
+  if (!isConfigured() || !redis) {
     return mem.get(teamId) ?? empty();
   }
   const [counts, voters, closed] = await Promise.all([
-    kv.hgetall<Record<string, number>>(countsKey(teamId)),
-    kv.smembers<string[]>(votersKey(teamId)),
-    kv.get<boolean>(closedKey(teamId)),
+    redis.hgetall<Record<string, number | string>>(countsKey(teamId)),
+    redis.smembers(votersKey(teamId)),
+    redis.get<boolean>(closedKey(teamId)),
   ]);
   const normalized: Record<string, number> = {};
   if (counts) {
@@ -39,7 +44,7 @@ export async function getSnapshot(teamId: number): Promise<VoteSnapshot> {
   }
   return {
     votes: normalized,
-    voters: Array.isArray(voters) ? voters : [],
+    voters: Array.isArray(voters) ? (voters as string[]) : [],
     closed: !!closed,
   };
 }
@@ -59,7 +64,7 @@ export async function castVote(
     return { ok: false, reason: "invalid" };
   }
 
-  if (!isKvConfigured()) {
+  if (!isConfigured() || !redis) {
     const cur = mem.get(teamId) ?? empty();
     if (cur.closed) return { ok: false, reason: "closed" };
     if (cur.voters.includes(voterId)) return { ok: false, reason: "duplicate" };
@@ -72,39 +77,39 @@ export async function castVote(
     return { ok: true, snapshot: next };
   }
 
-  const closed = await kv.get<boolean>(closedKey(teamId));
+  const closed = await redis.get<boolean>(closedKey(teamId));
   if (closed) return { ok: false, reason: "closed" };
 
-  const added = await kv.sadd(votersKey(teamId), voterId);
+  const added = await redis.sadd(votersKey(teamId), voterId);
   if (added === 0) {
     return { ok: false, reason: "duplicate" };
   }
-  await kv.hincrby(countsKey(teamId), cand, 1);
+  await redis.hincrby(countsKey(teamId), cand, 1);
 
   const snapshot = await getSnapshot(teamId);
   return { ok: true, snapshot };
 }
 
 export async function closeVoting(teamId: number): Promise<VoteSnapshot> {
-  if (!isKvConfigured()) {
+  if (!isConfigured() || !redis) {
     const cur = mem.get(teamId) ?? empty();
     const next = { ...cur, closed: true };
     mem.set(teamId, next);
     return next;
   }
-  await kv.set(closedKey(teamId), true);
+  await redis.set(closedKey(teamId), true);
   return getSnapshot(teamId);
 }
 
 export async function resetVoting(teamId: number): Promise<VoteSnapshot> {
-  if (!isKvConfigured()) {
+  if (!isConfigured() || !redis) {
     mem.set(teamId, empty());
     return empty();
   }
   await Promise.all([
-    kv.del(countsKey(teamId)),
-    kv.del(votersKey(teamId)),
-    kv.del(closedKey(teamId)),
+    redis.del(countsKey(teamId)),
+    redis.del(votersKey(teamId)),
+    redis.del(closedKey(teamId)),
   ]);
   return empty();
 }
