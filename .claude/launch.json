@@ -1,0 +1,15 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "sponge-study",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 3030,
+      "autoPort": false,
+      "env": {
+        "PORT": "3030"
+      }
+    }
+  ]
+}
