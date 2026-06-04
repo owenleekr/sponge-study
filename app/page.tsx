@@ -25,6 +25,21 @@ export default function HomePage() {
         </div>
       </header>
 
+      <Link
+        href="/offline"
+        className="mb-8 block rounded-2xl border-2 border-dashed border-gold-500/50 bg-gold-500/5 p-5 text-center transition hover:border-gold-500 hover:bg-gold-500/10"
+      >
+        <div className="text-xs font-semibold uppercase tracking-widest text-gold-400">
+          🎤 NEW · 오프라인 모임 모드
+        </div>
+        <div className="mt-1 text-lg font-bold text-cream-50">
+          금/일 로테이션 발표 (6/5, 6/7) →
+        </div>
+        <div className="mt-1 text-xs text-cream-100/60">
+          시간 설정 · 시작 · 타이머 끝나면 자동으로 다음 발표자 픽
+        </div>
+      </Link>
+
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {teams.map((team) => (
           <Link
