@@ -3,19 +3,19 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useOfflineTeams } from "@/lib/offlineStore";
-import { DAY_LABEL, Day } from "@/lib/offlineTeams";
+import { DAY_LABEL, Day, MEETING_INFO } from "@/lib/offlineTeams";
 
 export default function OfflineHome() {
   const { teams, hydrated, addTeam, deleteTeam, resetAll } = useOfflineTeams();
   const [showAdd, setShowAdd] = useState(false);
-  const [newDay, setNewDay] = useState<Day>("fri");
+  const [newDay, setNewDay] = useState<Day>("part1");
   const [newLabel, setNewLabel] = useState("");
   const [newMod, setNewMod] = useState("");
 
   const byDay = useMemo(() => {
     return {
-      fri: teams.filter((t) => t.day === "fri"),
-      sun: teams.filter((t) => t.day === "sun"),
+      part1: teams.filter((t) => t.day === "part1"),
+      part2: teams.filter((t) => t.day === "part2"),
     };
   }, [teams]);
 
@@ -36,7 +36,7 @@ export default function OfflineHome() {
         </Link>
       </nav>
 
-      <header className="mb-10 text-center">
+      <header className="mb-8 text-center">
         <div className="mb-2 flex items-center justify-center gap-3 text-3xl sm:text-4xl">
           <span>🎤</span>
           <h1 className="font-extrabold tracking-tight text-cream-50">
@@ -44,13 +44,22 @@ export default function OfflineHome() {
           </h1>
         </div>
         <p className="text-sm text-cream-100/70 sm:text-base">
+          🟦 {MEETING_INFO.date} · {MEETING_INFO.time} · {MEETING_INFO.venue}
+        </p>
+        <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-xs">
+          <span className="chip-muted">{MEETING_INFO.assigned}</span>
+          <span className="chip">
+            📷 촬영 로밍 {MEETING_INFO.roamingPhotographers.join(" · ")} (전 조 함께)
+          </span>
+        </div>
+        <p className="mt-3 text-xs text-cream-100/60">
           시간 설정 → 시작 → 타이머 끝나면 자동으로 다음 발표자
         </p>
       </header>
 
       {hydrated && (
         <>
-          {(["fri", "sun"] as const).map((day) => (
+          {(["part1", "part2"] as const).map((day) => (
             <section key={day} className="mb-10">
               <div className="mb-4 flex items-end justify-between">
                 <h2 className="text-xl font-bold text-cream-50">
@@ -143,15 +152,15 @@ export default function OfflineHome() {
                 </h3>
                 <div className="mb-2">
                   <label className="text-xs font-semibold uppercase tracking-wider text-cream-100/50">
-                    요일
+                    파트
                   </label>
                   <select
                     value={newDay}
                     onChange={(e) => setNewDay(e.target.value as Day)}
                     className="mt-1 w-full rounded-lg border border-ink-600 bg-ink-900 px-3 py-2.5 text-sm text-cream-50 outline-none focus:border-gold-500"
                   >
-                    <option value="fri">금요일 (6/5)</option>
-                    <option value="sun">일요일 (6/7)</option>
+                    <option value="part1">파트 1 · 19:30~20:50</option>
+                    <option value="part2">파트 2 · 21:00~22:20</option>
                   </select>
                 </div>
                 <div className="mb-2">
@@ -160,7 +169,7 @@ export default function OfflineHome() {
                   </label>
                   <input
                     type="text"
-                    placeholder="예: 금 5조"
+                    placeholder="예: 파트1 · 5조"
                     value={newLabel}
                     onChange={(e) => setNewLabel(e.target.value)}
                     className="mt-1 w-full rounded-lg border border-ink-600 bg-ink-900 px-3 py-2.5 text-sm text-cream-50 outline-none focus:border-gold-500"
