@@ -9,7 +9,7 @@ import {
 } from "./offlineTeams";
 
 const TEAMS_KEY = "sponge-study:offline:teams:v3";
-const SESSION_KEY = (id: string) => `sponge-study:offline:session:${id}:v2`;
+const SESSION_KEY = (id: string) => `sponge-study:offline:session:${id}:v3`;
 
 export type RotationState =
   | "idle"

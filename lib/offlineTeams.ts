@@ -41,7 +41,7 @@ export const SECTION_INFO: Record<
     dayLabel: "금요일 (6/5)",
     partLabel: "파트 2",
     timeRange: "21:00~22:20",
-    note: "방·모더 고정, 사람만 이동",
+    note: "방·모더 고정, 사람만 이동 (20:50~21:00 브레이크)",
   },
   "sun-p1": {
     dayKey: "sunday",
@@ -105,57 +105,45 @@ export type Topic = {
   perPersonSec: number;
 };
 
+// 파트1 (80분, 10명 기준) — 2개 주제 × 40분 = 인당 240초(4분)
 const TOPICS_PART1: Topic[] = [
   {
-    title: "아이스 브레이킹",
-    subtitle: "3개 키워드로 자기소개 (1분/인)",
-    totalMin: 10,
-    perPersonSec: 60,
+    title: "AI × 일·커리어·삶",
+    subtitle:
+      "AI를 내 일과 커리어 / 삶에서 어떻게 활용하고 또 풍성하게 만들 수 있을까요?",
+    totalMin: 40,
+    perPersonSec: 240,
   },
   {
-    title: "AI × 커리어 (일)",
-    subtitle: "AI를 활용해서 커리어에 적용 / 레버리지 (풍성) 어떻게?",
-    totalMin: 20,
-    perPersonSec: 120,
-  },
-  {
-    title: "AI × 삶",
-    subtitle: "AI를 활용해서 삶에 적용 / 레버리지 (풍성) 어떻게?",
-    totalMin: 20,
-    perPersonSec: 120,
-  },
-  {
-    title: "나만의 차별점",
-    subtitle: "AI와 별개로 반드시 가져가야 하는 나만의 차별점?",
-    totalMin: 20,
-    perPersonSec: 120,
+    title: "AI 시대 나만의 경쟁력",
+    subtitle:
+      "각자의 생각 — AI 시대 내가 잃지 않고, 또는 키워가야 하는 나만의 경쟁력은?",
+    totalMin: 40,
+    perPersonSec: 240,
   },
 ];
 
+// 파트2 (80분, 10명 기준) — 3개 주제 × 약 26분 = 인당 160초(2분 40초)
 const TOPICS_PART2: Topic[] = [
   {
-    title: "아이스 브레이킹",
-    subtitle: "3개 키워드로 자기소개 (1분/인)",
-    totalMin: 10,
-    perPersonSec: 60,
+    title: "내가 경험한 이기적공유",
+    subtitle:
+      "내가 직접 경험한 이기적공유란 무엇이며 나한테 있어서 어떤 유익이 있었는지",
+    totalMin: 26,
+    perPersonSec: 160,
   },
   {
-    title: "이기적공유의 순간",
-    subtitle: "이기적공유의 가치에 직접 경험으로 공감했던 순간",
-    totalMin: 20,
-    perPersonSec: 120,
+    title: "함께 성장한다는 것",
+    subtitle: "AI 솔로프리너 시대에 '함께' 성장한다는 것의 의미와 그 유익은?",
+    totalMin: 26,
+    perPersonSec: 160,
   },
   {
-    title: "함께 학습",
-    subtitle: "함께 학습하는 것에 대해서",
-    totalMin: 20,
-    perPersonSec: 120,
-  },
-  {
-    title: "내가 만들 유닛",
-    subtitle: "스폰지클럽에서 유닛을 한다면? 이런 것 같이 해보고 싶다",
-    totalMin: 20,
-    perPersonSec: 120,
+    title: "1기 이후 · 내가 만들 유닛",
+    subtitle:
+      "1기 이후 스폰지클럽에서 내가 주체가 되어 하고 싶은 것 or 앞으로 어떻게 학습해 나가고 싶으신지",
+    totalMin: 26,
+    perPersonSec: 160,
   },
 ];
 
