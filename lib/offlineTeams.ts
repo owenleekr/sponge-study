@@ -105,21 +105,27 @@ export type Topic = {
   perPersonSec: number;
 };
 
-// 파트1 (80분, 10명 기준) — 2개 주제 × 40분 = 인당 240초(4분)
+// 파트1 (80분, 10명 기준) — 아이스브레이킹 10분 + 주제 2개 × 35분 = 80분
 const TOPICS_PART1: Topic[] = [
+  {
+    title: "아이스 브레이킹",
+    subtitle: "2개 키워드로 자기소개 (1분/인)",
+    totalMin: 10,
+    perPersonSec: 60,
+  },
   {
     title: "AI × 일·커리어·삶",
     subtitle:
       "AI를 내 일과 커리어 / 삶에서 어떻게 활용하고 또 풍성하게 만들 수 있을까요?",
-    totalMin: 40,
-    perPersonSec: 240,
+    totalMin: 35,
+    perPersonSec: 210,
   },
   {
     title: "AI 시대 나만의 경쟁력",
     subtitle:
       "각자의 생각 — AI 시대 내가 잃지 않고, 또는 키워가야 하는 나만의 경쟁력은?",
-    totalMin: 40,
-    perPersonSec: 240,
+    totalMin: 35,
+    perPersonSec: 210,
   },
 ];
 
