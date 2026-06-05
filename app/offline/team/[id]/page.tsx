@@ -43,6 +43,18 @@ export default function OfflineTeamPage({
     }
   }, [team?.id]);
 
+  // 첫 방문 시 idle이면 첫 주제 시간을 default duration으로 셋업
+  useEffect(() => {
+    if (!team) return;
+    const topicsList = PART_TOPICS[team.day];
+    const idx = Math.min(session.topicIndex, topicsList.length - 1);
+    const tDur = topicsList[idx].perPersonSec * 1000;
+    if (session.state === "idle" && session.durationMs !== tDur) {
+      update((s) => ({ ...s, durationMs: tDur, remainingMs: tDur }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [team?.id, session.topicIndex]);
+
   useEffect(() => {
     const id = window.setInterval(() => setTick((t) => t + 1), 250);
     return () => window.clearInterval(id);
@@ -141,43 +153,80 @@ export default function OfflineTeamPage({
     session.durationMs > 0 ? 1 - remaining / session.durationMs : 0;
 
   // ─── 컨트롤 ───
-  const startRotationForTopic = (idx: number) => {
-    if (allSpeakers.length < 1) {
-      alert("발표 후보가 없어요. 멤버를 추가해주세요.");
-      return;
-    }
-    const t = topics[idx];
-    const duration = t.perPersonSec * 1000;
-    const queue = shuffle(allSpeakers.map((s) => s.id));
-    const [first, ...rest] = queue;
-    beepedRef.current = false;
-    update((s) => ({
-      ...s,
-      state: "ready",
-      durationMs: duration,
-      remainingMs: duration,
-      queue: rest,
-      history: [],
-      current: first,
-      timerEndsAt: null,
-      topicIndex: idx,
-    }));
-  };
-
+  // idle 상태에서 주제만 바꾸기 (시간은 기본값으로 자동 적용, 로테이션은 아직 시작 안 함)
   const switchTopic = (idx: number) => {
-    if (idx === session.topicIndex && session.state !== "idle") return;
+    if (idx === session.topicIndex && session.state === "idle") return;
     if (
-      (session.state === "running" || session.state === "revealing") &&
+      session.state !== "idle" &&
+      session.state !== "complete" &&
       !window.confirm(
         "주제를 바꾸면 현재 로테이션이 초기화됩니다. 계속할까요?",
       )
     ) {
       return;
     }
-    startRotationForTopic(idx);
+    const t = topics[idx];
+    const duration = t.perPersonSec * 1000;
+    beepedRef.current = false;
+    update((s) => ({
+      ...s,
+      state: "idle",
+      topicIndex: idx,
+      durationMs: duration,
+      remainingMs: duration,
+      queue: [],
+      history: [],
+      current: null,
+      timerEndsAt: null,
+    }));
   };
 
-  const startRotation = () => startRotationForTopic(session.topicIndex);
+  // 실제 로테이션 시작 (현재 session.durationMs 사용 = 사용자 커스텀 우선)
+  const startRotation = () => {
+    if (allSpeakers.length < 1) {
+      alert("발표 후보가 없어요. 멤버를 추가해주세요.");
+      return;
+    }
+    const queue = shuffle(allSpeakers.map((s) => s.id));
+    const [first, ...rest] = queue;
+    beepedRef.current = false;
+    update((s) => ({
+      ...s,
+      state: "ready",
+      remainingMs: s.durationMs,
+      queue: rest,
+      history: [],
+      current: first,
+      timerEndsAt: null,
+    }));
+  };
+
+  // 시간 조정
+  const setDuration = (ms: number) => {
+    update((s) => {
+      if (s.state === "running") return s; // 진행 중엔 변경 금지
+      return {
+        ...s,
+        durationMs: ms,
+        remainingMs: ms,
+      };
+    });
+  };
+  const applyCustomDuration = () => {
+    const min = parseInt(customMin || "0", 10) || 0;
+    const sec = parseInt(customSec || "0", 10) || 0;
+    const ms = (min * 60 + sec) * 1000;
+    if (ms < 5_000) {
+      alert("최소 5초 이상으로 설정해주세요.");
+      return;
+    }
+    setDuration(ms);
+    setCustomMin("");
+    setCustomSec("");
+  };
+  const resetToTopicDefault = () => {
+    setDuration(topic.perPersonSec * 1000);
+  };
 
   const startTimer = () => {
     beepedRef.current = false;
@@ -327,7 +376,25 @@ export default function OfflineTeamPage({
         {session.state === "idle" && (
           <div className="text-center">
             <div className="mb-6 tabular text-7xl font-extrabold text-cream-50 sm:text-9xl">
-              {formatMs(topic.perPersonSec * 1000)}
+              {formatMs(session.durationMs)}
+            </div>
+            <div className="mb-6 flex flex-wrap justify-center gap-2">
+              {[30, 60, 120, 180, 240, 300].map((sec) => {
+                const isActive = session.durationMs === sec * 1000;
+                return (
+                  <button
+                    key={sec}
+                    onClick={() => setDuration(sec * 1000)}
+                    className={`rounded-lg px-4 py-2 text-base transition ${
+                      isActive
+                        ? "bg-gold-500 text-ink-950 font-bold"
+                        : "border border-ink-600 text-cream-100/70 hover:border-gold-500/50"
+                    }`}
+                  >
+                    {sec < 60 ? `${sec}초` : `${sec / 60}분`}
+                  </button>
+                );
+              })}
             </div>
             <button onClick={startRotation} className="btn-gold text-xl">
               🎲 로테이션 시작
@@ -551,9 +618,72 @@ export default function OfflineTeamPage({
         <div className="mt-6">
           {session.state === "idle" && (
             <div className="text-center">
-              <div className="tabular text-5xl font-extrabold text-cream-50 sm:text-6xl">
-                {formatMs(topic.perPersonSec * 1000)}
+              <div className="text-xs font-semibold uppercase tracking-wider text-cream-100/40">
+                인당 발표 시간
               </div>
+              <div className="mt-1 tabular text-5xl font-extrabold text-cream-50 sm:text-6xl">
+                {formatMs(session.durationMs)}
+              </div>
+
+              {/* 프리셋 */}
+              <div className="mt-4 flex flex-wrap justify-center gap-1.5">
+                {[30, 60, 120, 180, 240, 300].map((sec) => {
+                  const isActive = session.durationMs === sec * 1000;
+                  return (
+                    <button
+                      key={sec}
+                      onClick={() => setDuration(sec * 1000)}
+                      className={`rounded-lg px-3 py-1.5 text-xs transition ${
+                        isActive
+                          ? "bg-gold-500 text-ink-950 font-bold"
+                          : "border border-ink-600 text-cream-100/70 hover:border-gold-500/50"
+                      }`}
+                    >
+                      {sec < 60 ? `${sec}초` : `${sec / 60}분`}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* 커스텀 분/초 */}
+              <div className="mt-3 flex items-center justify-center gap-1.5 text-xs text-cream-100/60">
+                <span>커스텀:</span>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="분"
+                  value={customMin}
+                  onChange={(e) => setCustomMin(e.target.value)}
+                  className="w-14 rounded-md border border-ink-700 bg-ink-900 px-2 py-1 text-center text-sm text-cream-50 outline-none focus:border-gold-500"
+                />
+                <span>분</span>
+                <input
+                  type="number"
+                  min="0"
+                  max="59"
+                  placeholder="초"
+                  value={customSec}
+                  onChange={(e) => setCustomSec(e.target.value)}
+                  className="w-14 rounded-md border border-ink-700 bg-ink-900 px-2 py-1 text-center text-sm text-cream-50 outline-none focus:border-gold-500"
+                />
+                <span>초</span>
+                <button
+                  onClick={applyCustomDuration}
+                  className="rounded-md border border-ink-600 px-2 py-1 text-cream-100 hover:border-gold-500/50"
+                >
+                  적용
+                </button>
+              </div>
+
+              {session.durationMs !== topic.perPersonSec * 1000 && (
+                <button
+                  onClick={resetToTopicDefault}
+                  className="mt-2 text-[11px] text-cream-100/40 underline-offset-4 hover:text-gold-400 hover:underline"
+                >
+                  ↺ 주제 기본값({topic.perPersonSec}초)으로 복원
+                </button>
+              )}
+
               <button
                 onClick={startRotation}
                 className="btn-gold mt-5 w-full text-lg"
@@ -562,7 +692,7 @@ export default function OfflineTeamPage({
               </button>
               <p className="mt-2 text-xs text-cream-100/40">
                 발표자 {allSpeakers.length}명 · 랜덤 순서 · 인당{" "}
-                {topic.perPersonSec}초
+                {Math.round(session.durationMs / 1000)}초
               </p>
             </div>
           )}
@@ -605,6 +735,29 @@ export default function OfflineTeamPage({
                   건너뛰기
                 </button>
               </div>
+
+              {/* ready 상태에서 시간 조정 */}
+              {session.state === "ready" && (
+                <div className="mt-4 flex flex-wrap items-center justify-center gap-1.5 text-[11px] text-cream-100/50">
+                  <span>시간:</span>
+                  {[30, 60, 120, 180, 240, 300].map((sec) => {
+                    const isActive = session.durationMs === sec * 1000;
+                    return (
+                      <button
+                        key={sec}
+                        onClick={() => setDuration(sec * 1000)}
+                        className={`rounded px-2 py-0.5 transition ${
+                          isActive
+                            ? "bg-gold-500 text-ink-950 font-bold"
+                            : "border border-ink-700 text-cream-100/60 hover:border-gold-500/50"
+                        }`}
+                      >
+                        {sec < 60 ? `${sec}초` : `${sec / 60}분`}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
 
               <div className="mt-5 text-sm text-cream-100/60">
                 진행 {session.history.length + 1} / {allSpeakers.length}
