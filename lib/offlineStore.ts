@@ -9,9 +9,14 @@ import {
 } from "./offlineTeams";
 
 const TEAMS_KEY = "sponge-study:offline:teams:v2";
-const SESSION_KEY = (id: string) => `sponge-study:offline:session:${id}:v1`;
+const SESSION_KEY = (id: string) => `sponge-study:offline:session:${id}:v2`;
 
-export type RotationState = "idle" | "ready" | "running" | "complete";
+export type RotationState =
+  | "idle"
+  | "ready"
+  | "running"
+  | "revealing"
+  | "complete";
 
 export type RotationSession = {
   state: RotationState;
@@ -22,6 +27,7 @@ export type RotationSession = {
   timerEndsAt: number | null;
   remainingMs: number;
   includeModerator: boolean;
+  topicIndex: number; // 현재 주제 인덱스
 };
 
 export const DEFAULT_DURATION_MS = 60 * 1000; // 1분
@@ -128,6 +134,7 @@ const emptySession = (): RotationSession => ({
   timerEndsAt: null,
   remainingMs: DEFAULT_DURATION_MS,
   includeModerator: true,
+  topicIndex: 0,
 });
 
 export function useRotation(teamId: string) {
