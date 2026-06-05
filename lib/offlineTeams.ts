@@ -129,27 +129,33 @@ const TOPICS_PART1: Topic[] = [
   },
 ];
 
-// 파트2 (80분, 10명 기준) — 3개 주제 × 약 26분 = 인당 160초(2분 40초)
+// 파트2 (80분, 10명 기준) — 아이스브레이킹 10분 + 주제 3개 × 23분 = 79분
 const TOPICS_PART2: Topic[] = [
+  {
+    title: "아이스 브레이킹",
+    subtitle: "2개 키워드로 자기소개 (1분/인) · 파트2 새 조원과 인사",
+    totalMin: 10,
+    perPersonSec: 60,
+  },
   {
     title: "내가 경험한 이기적공유",
     subtitle:
       "내가 직접 경험한 이기적공유란 무엇이며 나한테 있어서 어떤 유익이 있었는지",
-    totalMin: 26,
-    perPersonSec: 160,
+    totalMin: 23,
+    perPersonSec: 140,
   },
   {
     title: "함께 성장한다는 것",
     subtitle: "AI 솔로프리너 시대에 '함께' 성장한다는 것의 의미와 그 유익은?",
-    totalMin: 26,
-    perPersonSec: 160,
+    totalMin: 23,
+    perPersonSec: 140,
   },
   {
     title: "1기 이후 · 내가 만들 유닛",
     subtitle:
       "1기 이후 스폰지클럽에서 내가 주체가 되어 하고 싶은 것 or 앞으로 어떻게 학습해 나가고 싶으신지",
-    totalMin: 26,
-    perPersonSec: 160,
+    totalMin: 23,
+    perPersonSec: 140,
   },
 ];
 
