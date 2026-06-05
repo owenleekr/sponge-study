@@ -18,6 +18,8 @@ export type RotationState =
   | "revealing"
   | "complete";
 
+export type ModeratorPosition = "random" | "last";
+
 export type RotationSession = {
   state: RotationState;
   durationMs: number;
@@ -28,6 +30,7 @@ export type RotationSession = {
   remainingMs: number;
   includeModerator: boolean;
   topicIndex: number; // 현재 주제 인덱스
+  moderatorPosition: ModeratorPosition; // 조장 발표 순서 ("last" = 마지막)
 };
 
 export const DEFAULT_DURATION_MS = 60 * 1000; // 1분
@@ -134,6 +137,7 @@ const emptySession = (): RotationSession => ({
   remainingMs: DEFAULT_DURATION_MS,
   includeModerator: true,
   topicIndex: 0,
+  moderatorPosition: "last",
 });
 
 export function useRotation(teamId: string) {
@@ -142,7 +146,14 @@ export function useRotation(teamId: string) {
 
   useEffect(() => {
     const stored = safeRead<RotationSession | null>(SESSION_KEY(teamId), null);
-    if (stored) setSession(stored);
+    if (stored) {
+      // 구버전 세션 호환 — 누락된 필드 기본값으로 채우기
+      const merged: RotationSession = {
+        ...emptySession(),
+        ...stored,
+      };
+      setSession(merged);
+    }
     setHydrated(true);
   }, [teamId]);
 

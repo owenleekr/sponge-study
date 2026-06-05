@@ -187,7 +187,19 @@ export default function OfflineTeamPage({
       alert("발표 후보가 없어요. 멤버를 추가해주세요.");
       return;
     }
-    const queue = shuffle(allSpeakers.map((s) => s.id));
+    const ids = allSpeakers.map((s) => s.id);
+    const modId = ids.find((id) => id.startsWith("__mod__"));
+    let queue: string[];
+    if (
+      session.includeModerator &&
+      session.moderatorPosition === "last" &&
+      modId
+    ) {
+      const others = ids.filter((id) => id !== modId);
+      queue = [...shuffle(others), modId];
+    } else {
+      queue = shuffle(ids);
+    }
     const [first, ...rest] = queue;
     beepedRef.current = false;
     update((s) => ({
@@ -199,6 +211,25 @@ export default function OfflineTeamPage({
       current: first,
       timerEndsAt: null,
     }));
+  };
+
+  // 진행 중 +/-N초 시간 조정
+  const bumpRunningTime = (deltaMs: number) => {
+    update((s) => {
+      if (s.state === "running" && s.timerEndsAt) {
+        return {
+          ...s,
+          timerEndsAt: Math.max(Date.now() + 1000, s.timerEndsAt + deltaMs),
+        };
+      }
+      if (s.state === "ready") {
+        return {
+          ...s,
+          remainingMs: Math.max(5000, s.remainingMs + deltaMs),
+        };
+      }
+      return s;
+    });
   };
 
   // 시간 조정
@@ -543,17 +574,34 @@ export default function OfflineTeamPage({
               />
             </div>
           </div>
-          <label className="mt-3 inline-flex items-center gap-2 text-sm text-cream-100/70">
-            <input
-              type="checkbox"
-              checked={session.includeModerator}
-              onChange={(e) =>
-                update((s) => ({ ...s, includeModerator: e.target.checked }))
-              }
-              className="h-4 w-4 accent-gold-500"
-            />
-            모더레이터도 발표에 포함
-          </label>
+          <div className="mt-3 flex flex-col gap-2">
+            <label className="inline-flex items-center gap-2 text-sm text-cream-100/70">
+              <input
+                type="checkbox"
+                checked={session.includeModerator}
+                onChange={(e) =>
+                  update((s) => ({ ...s, includeModerator: e.target.checked }))
+                }
+                className="h-4 w-4 accent-gold-500"
+              />
+              모더레이터도 발표에 포함
+            </label>
+            <label className="inline-flex items-center gap-2 text-sm text-cream-100/70">
+              <input
+                type="checkbox"
+                checked={session.moderatorPosition === "last"}
+                disabled={!session.includeModerator}
+                onChange={(e) =>
+                  update((s) => ({
+                    ...s,
+                    moderatorPosition: e.target.checked ? "last" : "random",
+                  }))
+                }
+                className="h-4 w-4 accent-gold-500 disabled:opacity-40"
+              />
+              조장(모더레이터)은 항상 마지막에 발표
+            </label>
+          </div>
           <div className="mt-3 flex justify-end gap-2">
             <button
               onClick={handleDeleteTeam}
@@ -732,14 +780,42 @@ export default function OfflineTeamPage({
                   </button>
                 )}
                 <button onClick={skipManually} className="btn-ghost text-sm">
-                  건너뛰기
+                  ⏭ 다음으로 스킵
                 </button>
               </div>
 
-              {/* ready 상태에서 시간 조정 */}
+              {/* +/- 시간 미세 조정 (running/ready 둘 다) */}
+              <div className="mt-3 flex items-center justify-center gap-1.5 text-xs text-cream-100/60">
+                <button
+                  onClick={() => bumpRunningTime(-30_000)}
+                  className="rounded-md border border-ink-700 px-2.5 py-1 hover:border-gold-500/50"
+                >
+                  −30초
+                </button>
+                <button
+                  onClick={() => bumpRunningTime(-10_000)}
+                  className="rounded-md border border-ink-700 px-2.5 py-1 hover:border-gold-500/50"
+                >
+                  −10초
+                </button>
+                <button
+                  onClick={() => bumpRunningTime(10_000)}
+                  className="rounded-md border border-ink-700 px-2.5 py-1 hover:border-gold-500/50"
+                >
+                  +10초
+                </button>
+                <button
+                  onClick={() => bumpRunningTime(30_000)}
+                  className="rounded-md border border-ink-700 px-2.5 py-1 hover:border-gold-500/50"
+                >
+                  +30초
+                </button>
+              </div>
+
+              {/* ready 상태에서 프리셋 시간 변경 */}
               {session.state === "ready" && (
-                <div className="mt-4 flex flex-wrap items-center justify-center gap-1.5 text-[11px] text-cream-100/50">
-                  <span>시간:</span>
+                <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5 text-[11px] text-cream-100/50">
+                  <span>프리셋:</span>
                   {[30, 60, 120, 180, 240, 300].map((sec) => {
                     const isActive = session.durationMs === sec * 1000;
                     return (
