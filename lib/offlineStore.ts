@@ -8,7 +8,7 @@ import {
   Day,
 } from "./offlineTeams";
 
-const TEAMS_KEY = "sponge-study:offline:teams:v2";
+const TEAMS_KEY = "sponge-study:offline:teams:v3";
 const SESSION_KEY = (id: string) => `sponge-study:offline:session:${id}:v2`;
 
 export type RotationState =
@@ -67,14 +67,13 @@ export function useOfflineTeams() {
   }, []);
 
   const addTeam = useCallback(
-    (day: Day, label: string, moderator: string) => {
+    (day: Day, label: string, moderator: string, room = "") => {
       const id = `${day}-${Date.now().toString(36)}`;
       const team: OfflineTeam = {
         id,
         day,
-        label:
-          label.trim() ||
-          `${day === "part1" ? "파트1" : "파트2"} · 새 조`,
+        label: label.trim() || "새 조",
+        room: room.trim(),
         moderator: moderator.trim() || "모더레이터",
         members: [],
       };

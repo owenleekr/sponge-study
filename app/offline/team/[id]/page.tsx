@@ -306,8 +306,15 @@ export default function OfflineTeamPage({
           ⛶ 종료 (ESC)
         </button>
 
-        <div className="mb-4 text-center text-xs font-semibold tracking-widest text-gold-400 sm:text-base">
-          {partHeader.tag} · {team.label}
+        <div className="mb-4 flex items-center justify-center gap-2 text-center text-xs font-semibold tracking-widest text-gold-400 sm:text-base">
+          <span>
+            {partHeader.tag} · {team.label}
+          </span>
+          {team.room && (
+            <span className="rounded-full bg-gold-500 px-2.5 py-0.5 text-[11px] font-bold text-ink-950">
+              {team.room}
+            </span>
+          )}
         </div>
 
         <div className="mb-2 text-center text-2xl font-extrabold text-cream-50 sm:text-4xl md:text-5xl">
@@ -430,8 +437,13 @@ export default function OfflineTeamPage({
         <div className="text-xs font-semibold tracking-widest text-gold-400">
           {partHeader.tag} · {partHeader.title}
         </div>
-        <div className="mt-1 flex items-baseline gap-2">
+        <div className="mt-1 flex flex-wrap items-baseline gap-2">
           <span className="text-xs text-cream-100/50">{team.label}</span>
+          {team.room && (
+            <span className="rounded-full bg-gold-500 px-2 py-0.5 text-[11px] font-bold text-ink-950">
+              {team.room}
+            </span>
+          )}
           <h1 className="text-2xl font-bold text-cream-50">
             🎙 {team.moderator}
           </h1>
